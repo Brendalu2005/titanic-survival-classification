@@ -44,6 +44,8 @@ flowchart TD
     F --> G[Avaliação didática nos 20%]
     G --> H[Salvar pipeline, limiar e relatórios]
     H --> I[Previsões em outro CSV]
+    I --> K[Dashboard Streamlit local]
+    H --> K
     E --> J[MLflow local]
     G --> J
 ```
@@ -72,4 +74,15 @@ Abra http://127.0.0.1:5000 e selecione `titanic-aprendizado`; encerre com Ctrl+C
 As buscas registram parâmetros e métricas; a avaliação registra relatórios e modelo.
 Dados, modelo, previsões e armazenamento do MLflow ficam fora do Git.
 Treino ou previsão com CSV ausente ou colunas faltantes informa o problema no terminal.
-Não há deploy, aplicação web nem uso operacional.
+O dashboard é local e educacional, sem deploy ou uso operacional.
+
+## Dashboard
+Após treinar e gerar as previsões, execute:
+
+```powershell
+python -m streamlit run streamlit_app.py
+```
+
+Abra o endereço local mostrado no terminal. O painel lê os relatórios e o CSV salvo,
+permite filtrar passageiros e baixar previsões. Precisão, recall e acurácia vêm
+do teste com respostas conhecidas; os filtros das previsões não recalculam métricas.
