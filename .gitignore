@@ -1,2 +1,12 @@
 .venv/
 data/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+models/
+predictions/
+mlartifacts/
+mlruns/
+mlflow.db
+mlflow.db-*
+tmp/
