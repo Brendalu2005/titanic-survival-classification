@@ -11,3 +11,4 @@ mlflow.db
 mlflow.db-*
 tmp/
 .streamlit/secrets.toml
+relatorio.md

@@ -1,9 +1,11 @@
 """Dashboard local: python -m streamlit run streamlit_app.py."""
 
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 
 from src.dashboard_data import MODEL_NAMES, OUTCOMES, ROOT, filter_predictions, load_evaluation, load_predictions
+from src.training_view import render_training
 
 st.set_page_config(page_title="Titanic | Previsões e avaliação", page_icon=":material/directions_boat:", layout="wide")
 st.caption("TITANIC · MACHINE LEARNING PARA APRENDIZADO")
@@ -37,9 +39,12 @@ if evaluation is not None:
                   help="Proporção total de previsões corretas no conjunto de avaliação.")
     st.caption("Essas métricas vêm do teste separado do treino. Os filtros do lote de previsões não alteram esses valores.")
 
-view = st.segmented_control("Visualização", ["Previsões", "Avaliação"], default="Previsões", key="view")
+view = st.segmented_control("Visualização", ["Previsões", "Avaliação", "Entendendo o treinamento"], default="Previsões", key="view")
 
-if view != "Avaliação":
+if view == "Entendendo o treinamento":
+    render_training(ROOT / "reports", evaluation)
+
+elif view != "Avaliação":
     st.subheader("Previsões dos passageiros")
     st.caption("Resultados salvos do lote de previsão. Sem respostas reais, este lote não permite medir acurácia, precisão ou recall.")
     try:
@@ -73,8 +78,12 @@ if view != "Avaliação":
                 with st.container(border=True):
                     st.markdown("**Classes previstas neste recorte**")
                     counts = filtered["Previsao"].value_counts().reindex(OUTCOMES.values(), fill_value=0).rename("Passageiros")
-                    st.bar_chart(counts, horizontal=True, height=230,
-                                 alt="Quantidade de passageiros por classe prevista após os filtros")
+                    figure = px.bar(x=counts.to_numpy(), y=counts.index, orientation="h",
+                                    text=counts.to_numpy(), labels={"x": "Passageiros", "y": "Previsão"}, height=260)
+                    figure.update_layout(margin=dict(t=15, b=25), separators=",.")
+                    figure.update_xaxes(rangemode="tozero", dtick=1 if counts.max() < 10 else None)
+                    st.plotly_chart(figure, key="prediction_counts", width="stretch",
+                                    alt="Quantidade de passageiros por classe prevista após os filtros")
             with right:
                 with st.container(border=True):
                     st.markdown("**Distribuição das probabilidades**")
@@ -82,7 +91,13 @@ if view != "Avaliação":
                                     bins=[0, .2, .4, .6, .8, 1], include_lowest=True,
                                     labels=["0–20%", "20–40%", "40–60%", "60–80%", "80–100%"])
                     histogram = ranges.value_counts(sort=False).rename("Passageiros")
-                    st.bar_chart(histogram, height=230, alt="Distribuição das probabilidades previstas de sobrevivência")
+                    figure = px.bar(x=histogram.index.astype(str), y=histogram.to_numpy(),
+                                    text=histogram.to_numpy(), labels={"x": "Probabilidade", "y": "Passageiros"}, height=260)
+                    figure.update_layout(margin=dict(t=15, b=25), separators=",.")
+                    figure.update_xaxes(type="category", tickangle=0)
+                    figure.update_yaxes(rangemode="tozero", dtick=1 if histogram.max() < 10 else None)
+                    st.plotly_chart(figure, key="prediction_probabilities", width="stretch",
+                                    alt="Distribuição das probabilidades previstas de sobrevivência")
             columns = [column for column in ["PassengerId", "Name", "Previsao", "ProbabilidadeSobrevivencia", "Age", "Sex", "Pclass"] if column in filtered]
             table = filtered[columns].rename(columns={
                 "PassengerId": "ID", "Name": "Passageiro", "Previsao": "Previsão",

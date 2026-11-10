@@ -103,6 +103,15 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(len(app.metric), 0)
         self.assertEqual(len(app.dataframe[0].value), 3)
 
+    def test_training_view_missing_reports_keeps_app_usable(self):
+        app = self.app()
+        app.segmented_control(key="view").set_value("Entendendo o treinamento").run()
+        self.assertFalse(app.exception)
+        self.assertTrue(any("python -m src.train" in item.value for item in app.info))
+        app.segmented_control(key="view").set_value("Avaliação").run()
+        self.assertFalse(app.exception)
+        self.assertEqual(app.table[0].value.to_numpy().tolist(), [[8, 2], [1, 9]])
+
 
 if __name__ == "__main__":
     unittest.main()

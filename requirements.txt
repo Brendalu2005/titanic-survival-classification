@@ -114,3 +114,4 @@ widgetsnbextension==4.0.16
 xgboost==3.4.1
 mlflow==3.18.0
 streamlit==1.67.0
+plotly==7.1.0

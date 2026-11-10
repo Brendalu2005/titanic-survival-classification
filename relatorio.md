@@ -15,31 +15,43 @@ A coluna que queremos prever é o **target**, chamado `Survived`:
 
 As características de entrada são chamadas de **features**: idade, sexo, classe da passagem e variáveis criadas a partir dos dados, por exemplo.
 
-O trabalho possui três etapas principais:
+O trabalho possui quatro etapas principais:
 
 1. Entender os dados e formular hipóteses.
 2. Preparar os dados, treinar, comparar e avaliar modelos.
 3. Salvar o modelo e usá-lo para prever outros passageiros.
+4. Explorar previsões, avaliação e comparação dos modelos no dashboard local.
 
 ## 2. Visão geral do fluxo
 
 ```mermaid
 flowchart TD
-    A[data/train.csv: dados com resposta conhecida] --> B[Baseline e EDA: explorar e formular hipóteses]
-    B --> C[Decisões de preparação implementadas em src/pipeline.py]
-    A --> D[src/train.py: coordenar o experimento]
+    A[data/train.csv: dados com 
+    resposta conhecida] --> B[Baseline e EDA: explorar e formular hipóteses]
+    B --> C[Decisões de preparação 
+    implementadas em src/pipeline.py]
+    A --> D[src/train.py: coordenar 
+    o experimento]
     C --> D
     D --> E[Separar 80% para treino e 20% para teste]
-    E --> F[Validação cruzada e escolha de configurações no treino]
-    F --> G[Escolha do modelo e do limiar no treino]
-    G --> H[Avaliação didática nos 20% separados]
-    H --> I[reports/: métricas, gráficos e conclusões]
-    H --> J[models/titanic.joblib: pipeline e limiar salvos]
+    E --> F[Validação cruzada e escolha 
+    de configurações no treino]
+    F --> G[Escolha do modelo e do 
+    limiar no treino]
+    G --> H[Avaliação didática nos 
+    20% separados]
+    H --> I[reports/: métricas, gráficos 
+    e conclusões]
+    H --> J[models/titanic.joblib: pipeline 
+    e limiar salvos]
     F --> K[MLflow: histórico dos experimentos]
     H --> K
     J --> L[src/predict.py: gerar previsões]
-    M[data/test.csv: passageiros sem resposta conhecida] --> L
+    M[data/test.csv: passageiros 
+    sem resposta conhecida] --> L
     L --> N[predictions/previsoes.csv]
+    I --> O[Dashboard Streamlit: avaliação e estudo do treinamento]
+    N --> O
 ```
 
 Baseline e EDA orientam o estudo, mas não precisam ser executados antes de cada treinamento. O script lê os dados e aplica suas próprias funções de preparação.
@@ -54,7 +66,9 @@ O [README](README.md) é curto; este relatório apresenta a explicação de estu
 
 ### requirements.txt
 
-Lista as bibliotecas e suas versões, como pandas, scikit-learn, XGBoost, MLflow e JupyterLab.
+Lista as bibliotecas e suas versões, como pandas, scikit-learn, XGBoost, MLflow,
+JupyterLab, Streamlit e Plotly. O dashboard usa Plotly Express nos gráficos
+interativos; o treinamento usa Matplotlib para salvar os gráficos estáticos.
 
 ```powershell
 python -m pip install -r requirements.txt
@@ -119,7 +133,7 @@ Sua principal entrega é **entendimento que orienta decisões**, e não apenas u
 
 Essas decisões não garantem melhora: a modelagem avalia seu conjunto. Uma associação exploratória também não demonstra causalidade.
 
-Os campos em branco da EDA permanecem para você escrever suas interpretações.
+Os campos em branco da EDA permanecem para escrever interpretações.
 
 ### Por que a tabela preparada na EDA não é enviada ao treinamento?
 
@@ -371,6 +385,19 @@ mlflow.log_artifact(...)   # Arquivos
 
 As execuções de cada família registram a melhor configuração, métricas e um CSV com a busca completa. A execução final registra métricas de teste, relatórios e pacote do modelo.
 
+O registro de cada família ocorre depois que sua busca termina. A interface
+permite consultar os resultados concluídos, mas o código não transmite o progresso
+de cada configuração ou rodada em tempo real. Cada treinamento completo cria
+quatro execuções de seleção e uma de avaliação final; nomes repetidos podem
+corresponder a treinamentos realizados em momentos diferentes.
+
+As métricas com prefixo `cv_` se referem à validação cruzada: `cv_accuracy` é a
+acurácia média e `cv_accuracy_std` é o desvio padrão entre as cinco rodadas.
+Por exemplo, 0,823 de média e 0,021 de desvio significam 82,3% de acertos em média
+e desvio padrão de aproximadamente 2,1 pontos percentuais. O desvio não é outra
+acurácia nem um intervalo de confiança. A mesma interpretação vale para `cv_f1`
+e `cv_f1_std`.
+
 ### Arquivos do MLflow
 
 - `mlflow.db`: banco com informações estruturadas dos experimentos.
@@ -475,7 +502,10 @@ Contém verificações do funcionamento do código:
 python -m unittest discover -s tests -v
 ```
 
-Os oito testes aparecem no terminal. Eles não são registrados no MLflow.
+Atualmente, a suíte contém **14 testes**: oito em `test_workflow.py` e seis
+em `test_dashboard.py`. Os resultados aparecem no terminal e não são registrados
+no MLflow. Os testes do dashboard verificam filtros, navegação, relatórios ausentes
+ou inválidos e a separação entre métricas de avaliação e o lote de previsões.
 
 **Testes automatizados verificam o comportamento do código; métricas no conjunto de teste avaliam o desempenho preditivo.** Passar nos testes não garante boa previsão.
 
@@ -520,13 +550,20 @@ Mantenha o terminal aberto enquanto usa o JupyterLab e encerre com Ctrl+C, confi
 
 Valores consultados em [comparacao_modelos.csv](reports/comparacao_modelos.csv) e [metricas.json](reports/metricas.json):
 
-| Modelo | Melhor configuração | F1 médio na validação |
-|---|---|---:|
-| Regressão logística | `C=10` | 0,766 |
-| Árvore | Profundidade 3; mínimo por folha 1 | 0,765 |
-| XGBoost | Profundidade 3; 200 árvores | 0,760 |
+| Modelo | Melhor configuração | F1 médio no treino | F1 médio na validação | Desvio padrão do F1 na validação |
+|---|---|---:|---:|---:|
+| Dummy | Classe mais frequente | 0,000 | 0,000 | 0,000 |
+| Regressão logística | `C=10` | 0,776 | 0,766 | 0,022 |
+| Árvore | Profundidade 3; mínimo por folha 1 | 0,773 | 0,765 | 0,048 |
+| XGBoost | Profundidade 3; 200 árvores | 0,898 | 0,760 | 0,029 |
 
 A regressão logística venceu pelo maior F1 médio. As diferenças são pequenas e não demonstram superioridade geral desse algoritmo.
+
+O critério considera o **F1 de validação**, e não o F1 de treino. O XGBoost teve
+o maior F1 nas partes usadas para aprender (0,898), mas a vantagem desapareceu
+nas partes de validação (0,760), um sinal de possível sobreajuste. As médias
+de treino da tabela são calculadas nas partes de treinamento das cinco rodadas;
+não são métricas dos 20% de teste final.
 
 O limiar escolhido no treino foi **0,45**.
 
@@ -564,6 +601,8 @@ A interface local é iniciada com `python -m streamlit run streamlit_app.py`.
 
 - `streamlit_app.py` organiza a tela, os cartões de precisão, recall e acurácia, os filtros, as tabelas e os gráficos.
 - `src/dashboard_data.py` lê os relatórios e as previsões e aplica os filtros, sem treinar ou alterar o modelo.
+- `src/training_view.py` apresenta a seção de estudo dos resultados do treinamento.
+- `src/dashboard_charts.py` cria as figuras de F1 com Plotly Express, compartilhando a escala e os rótulos.
 - `.streamlit/config.toml` define o tema visual.
 - `tests/test_dashboard.py` verifica o comportamento da interface e a separação entre métricas e previsões.
 
@@ -572,3 +611,37 @@ As métricas são lidas de `reports/metricas.json`, calculadas nos passageiros d
 As previsões vêm de `predictions/previsoes.csv`. Quando `data/test.csv` está disponível, o painel acrescenta nome, idade, sexo e classe pelo identificador do passageiro. É possível filtrar resultado previsto, probabilidade, nome ou ID e, quando disponíveis, classe e sexo, e baixar o recorte em CSV.
 
 Os filtros alteram apenas o lote visualizado. Sem respostas verdadeiras nesse lote, não é possível calcular novas métricas. O dashboard não treina modelos, não altera o limiar e não substitui o histórico do MLflow. Após gerar novos arquivos, o botão Atualizar dados relê as saídas.
+
+### Entendendo o treinamento
+
+A terceira visualização explica o fluxo de preparação, validação cruzada,
+escolha do modelo, ajuste do limiar e teste final. Usa os arquivos concluídos
+de `reports/`, e não consulta o histórico do MLflow nem acompanha o treino ao vivo.
+A data exibida é a atualização de `comparacao_modelos.csv`, no horário de Fortaleza;
+ela não identifica de forma única uma execução do MLflow.
+
+O seletor **Tipo de gráfico** oferece **Ambos**, **Heatmap** e **Barras**, com
+ambos exibidos por padrão. As duas figuras mostram os mesmos valores de F1 médio
+de treino e validação por modelo. O heatmap mantém cores na escala de 0 a 1 e
+números nas células; as barras são agrupadas e mostram os valores sobre elas.
+
+A tabela mostra a melhor configuração de cada modelo e o desvio padrão do F1
+na validação. O painel destaca a maior diferença entre treino e validação como
+um sinal de possível sobreajuste e explica o critério usado para escolher o vencedor.
+
+No seletor **Modelo para estudar**, é possível consultar todas as configurações
+avaliadas e as cinco rodadas da melhor configuração, inicialmente para o modelo
+vencedor. Essas rodadas usam partes diferentes dos dados; não representam uma
+sequência em que o desempenho deva melhorar. Nas colunas `test` dos CSVs de busca
+do scikit-learn, o termo significa a validação interna, não o teste final de 20%.
+
+Ao final, a seção apresenta a matriz de confusão do modelo vencedor com o limiar
+escolhido e lembra que o conjunto de teste já foi consultado no baseline.
+Todos os gráficos interativos do painel usam Plotly Express, inclusive a comparação
+por rodada e as distribuições das previsões. Os PNGs produzidos pelo treinamento
+continuam em Matplotlib.
+
+Se a interface mostrar uma versão antiga, encerre o servidor com Ctrl+C no terminal,
+execute novamente `python -m streamlit run streamlit_app.py` e recarregue a página.
+O botão Atualizar dados relê relatórios; ele não substitui a reinicialização do
+servidor quando alterações de código não foram carregadas.
