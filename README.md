@@ -88,7 +88,25 @@ não há acompanhamento de cada rodada ao vivo. Novos treinamentos criam novas
 execuções com os mesmos nomes, preservando as anteriores.
 Dados, modelo, previsões e armazenamento do MLflow ficam fora do Git.
 Treino ou previsão com CSV ausente ou colunas faltantes informa o problema no terminal.
-O dashboard é local e educacional, sem deploy ou uso operacional.
+O dashboard é educacional, sem uso operacional.
+
+## Deploy no Streamlit Community Cloud
+
+Configure o arquivo principal como `streamlit_app.py`. O único `requirements.txt`
+reúne as dependências usadas no dashboard, treinamento, testes e notebooks,
+mantendo as versões do ambiente original. As dependências indiretas são
+instaladas automaticamente pelo pip.
+Não substitua esse arquivo por um `pip freeze` do Windows: isso pode incluir
+pacotes como `pywinpty` sem a restrição de plataforma necessária no servidor Linux.
+
+Depois de enviar os arquivos alterados ao GitHub, o Community Cloud detecta
+a mudança no `requirements.txt` e refaz a instalação das dependências.
+
+Os relatórios de `reports/` já estão versionados. Já `predictions/` e `data/`
+estão no `.gitignore` e não acompanham o deploy. Sem esses arquivos, a seção
+de previsões mostra uma orientação de dados ausentes. Para exibir previsões
+na nuvem, será necessário disponibilizar `predictions/previsoes.csv` no ambiente;
+`data/test.csv` é opcional e acrescenta nome, sexo, idade e classe dos passageiros.
 
 ## Dashboard
 
