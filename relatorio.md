@@ -27,7 +27,8 @@ O trabalho possui quatro etapas principais:
 ```mermaid
 flowchart TD
     A[data/train.csv: dados com 
-    resposta conhecida] --> B[Baseline e EDA: explorar e formular hipóteses]
+    resposta conhecida] --> S[Divisão estratificada 80/20: semente 42]
+    S --> B[Baseline e EDA somente nos 80% de treino]
     B --> C[Decisões de preparação 
     implementadas em src/pipeline.py]
     A --> D[src/train.py: coordenar 
@@ -93,21 +94,21 @@ Ele ajuda a separar as dependências deste projeto das dependências de outros t
 
 ## 4. O papel dos notebooks
 
-### notebooks/01_baseline.ipynb — primeira experiência
+### notebooks/01_baseline.ipynb — referência inicial no treino
 
-Esse notebook carrega o Titanic disponibilizado pelo Seaborn e apresenta uma versão inicial do problema:
+Esse notebook usa `data/train.csv` e as funções compartilhadas de `src/baseline.py` e `src/pipeline.py`:
 
-1. Inspeciona os dados.
-2. Seleciona poucas características.
-3. Separa treino e teste.
-4. Preenche idades ausentes com a mediana do treino.
-5. Cria um dummy.
-6. Treina regressão logística.
-7. Calcula métricas, faz validação cruzada e compara limiares.
+1. Separa 80% para treino e reserva 20% para teste, com estratificação e semente 42.
+2. Inspeciona apenas o treino.
+3. Monta os pipelines compartilhados para Dummy e regressão logística.
+4. Aprende a preparação dentro de cada rodada da validação cruzada.
+5. Compara os modelos por validação cruzada de cinco partes nos 80% de treino.
+6. Compara limiares usando previsões de validação cruzada somente no treino.
+7. Não avalia o teste e não salva modelo nem relatórios finais.
 
-O notebook foi preservado como registro do aprendizado inicial. Ele não fornece um modelo salvo para o script atual e não precisa rodar antes dele.
+O notebook não fornece um modelo salvo para o script atual e não precisa rodar antes dele.
 
-A validação do fluxo novo é mais cuidadosa: a preparação fica dentro das partições da validação e o teste não orienta os novos ajustes. No baseline, a idade é preenchida antes da validação cruzada e os limiares são comparados no teste; ele deve ser lido como uma primeira experiência, com essas limitações.
+A versão anterior preenchia idades antes da validação cruzada e comparava limiares no teste. A versão corrigida evita esses usos. O histórico de consulta ao teste permanece: corrigir o código não torna o conjunto novamente independente. As métricas usadas para escolher o limiar também são medidas de seleção interna, não uma avaliação independente do limiar escolhido.
 
 ### notebooks/02_eda.ipynb — análise exploratória
 
@@ -319,7 +320,7 @@ No projeto, a classe majoritária é não sobrevivente. Sempre prever essa class
 
 O dummy do notebook 01 ensinou esse conceito. O dummy do script recria a referência nas condições do experimento completo.
 
-Não é necessário executar os dois. O baseline inicial foi preservado como histórico de aprendizado; o fluxo atual cria a própria referência e não depende de um objeto que ficou na memória de outro notebook.
+Não é necessário executar os dois. O baseline é uma introdução com validação somente no treino; o fluxo principal cria a própria referência e não depende de um objeto que ficou na memória de outro notebook.
 
 ### evaluate(): calcular métricas
 
@@ -502,8 +503,10 @@ Contém verificações do funcionamento do código:
 python -m unittest discover -s tests -v
 ```
 
-Atualmente, a suíte contém **14 testes**: oito em `test_workflow.py` e seis
-em `test_dashboard.py`. Os resultados aparecem no terminal e não são registrados
+Atualmente, a suíte contém **15 testes**: oito em `test_workflow.py`, seis
+em `test_dashboard.py` e um em `test_baseline.py`. O teste do baseline altera
+as features dos 20% reservados e confirma que a comparação e o limiar não mudam.
+Os resultados aparecem no terminal e não são registrados
 no MLflow. Os testes do dashboard verificam filtros, navegação, relatórios ausentes
 ou inválidos e a separação entre métricas de avaliação e o lote de previsões.
 

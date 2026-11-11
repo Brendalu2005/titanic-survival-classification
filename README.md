@@ -30,7 +30,9 @@ python -m jupyterlab # Opcional: abrir os notebooks pelo navegador em vez do VS 
 Leia os notebooks na ordem: **01 baseline → 02 EDA → 03 modelos**.
 O notebook 03 também executa o treinamento: rodá-lo depois do terminal repete
 o experimento e atualiza os relatórios; as execuções anteriores permanecem no MLflow.
-Os dois notebooks originais foram preservados. A EDA ainda tem interpretações
+O baseline usa o CSV local e validação cruzada somente nos 80% de treino, com
+preparação dentro dos pipelines; não consulta o teste nem salva o modelo final.
+A EDA ainda tem interpretações
 e conclusões em branco a serem preenchidas.
 
 ## Fluxo
@@ -42,7 +44,7 @@ flowchart TD
     C --> D[Features e preparação dentro
     dos pipelines]
     D --> E[Validação cruzada e busca
-    pequena no treino]
+    de hiperparâmetros no treino]
     E --> F[Escolha do modelo e limiar
     no treino]
     F --> G[Avaliação didática nos 20%]
@@ -57,7 +59,10 @@ flowchart TD
 Compara dummy, regressão logística, árvore e XGBoost em CPU.
 Usa F1 dos sobreviventes como critério didático, com acurácia, precisão, recall
 e ROC-AUC de apoio. Ajusta o limiar com previsões fora da partição de treino.
-O teste já foi consultado no baseline: a avaliação **não é independente**.
+O teste já foi consultado na versão anterior do baseline: a avaliação **não é independente**.
+A correção do baseline evita novas consultas ao teste durante o estudo inicial,
+mas não apaga esse histórico. O F1 usado para escolher o limiar é uma medida
+de seleção interna, não uma avaliação independente do limiar escolhido.
 A seleção interna também pode ser otimista; não usamos validação cruzada aninhada.
 Dados ausentes e passageiros da mesma família são outras limitações.
 
