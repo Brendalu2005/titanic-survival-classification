@@ -145,3 +145,5 @@ atuais e podem mudar após novos experimentos.
 Se a página ainda mostrar o gráfico antigo sem o seletor de visualização,
 encerre o Streamlit com Ctrl+C no terminal, execute novamente o comando acima
 e recarregue a página.
+ ## Deploy
+ Link para dashboar no ar [Dashboard](https://titanic-survival-classification-test.streamlit.app/)
